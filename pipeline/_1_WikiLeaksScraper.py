@@ -6,28 +6,26 @@ from bs4 import BeautifulSoup
 
 HEADERS={'User-Agent': 'Mozilla/5.0'}
 
-INPUT_JSON_PATH = 'json/clinton_emails/1000_clinton_emails_links.json'
-OUTPUT_DIRECTORY = 'email_repo'
+ITERATION = "00"
+CURRENT_ITERATION = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
+INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
+OUTPUT_DIRECTORY = 'data/email_repo'
 EMAIL_NAMING = 'clinton_email_content.md'
-
-ITERATION = 2
-CURRENT_ITERATION = f'json/clinton_emails/clinton_json_links_{ITERATION}.json'
 
 FIRST_BEGIN_DELIMITER = "h2"
 END_DELIMITER = "###"
 final_email_content=''
 
 i = 0 #increment on each file in the repo
-TESTING_END_POINT = 5 #Set = a number < 100 for testing.  Else set = None
+TESTING_END_POINT = None  #Set = a number < 100 for testing.  Else set = None
 
-POST_DOWNLOAD_BEGIN_DELIMITER = "\n*********************NEW_EMAIL*********************\n"
+# POST_DOWNLOAD_BEGIN_DELIMITER = "\n*********************NEW_EMAIL*********************\n"
 POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"
 
 '''
 Main driver function
 '''
 def main():
-
 
     import os
     print("At directory: " + os.getcwd())
@@ -91,7 +89,6 @@ parameters: line -inputted line
 '''
 def find_next_link(line: str)-> str:
 
-
     if not line.startswith("<a href="):
         return None
 
@@ -122,7 +119,7 @@ def fileParser(soup: BeautifulSoup, url: str):
         
     content_lines = []
 
-    final_email_content += ''.join(POST_DOWNLOAD_BEGIN_DELIMITER) #Indicate beginning of new email
+    # final_email_content += ''.join(POST_DOWNLOAD_BEGIN_DELIMITER) #Indicate beginning of new email
 
     while email_content:
         

@@ -1,69 +1,60 @@
 import argparse
 
-from langchain_community.embeddings import OllamaEmbeddings #DEPRECATED VERSION
-# from langchain_ollama import OllamaEmbeddings
-
-# from langchain_community.vectorstores import Chroma
+from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
-
 from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 
-from langchain.evaluation import load_evaluator
+from _2_db_builder import MODEL
+from _2_db_builder import CHROMA_PATH
 
-
-CHROMA_PATH = "chroma"
-
-NUM_RESULTS = 1
-
+NUM_RESULTS = 5
 PROMPT_TEMPLATE = """
-Given this context only, answer the question that follows:
+I am going to ask you provide some context, only answer with regards to the context:
 
 {context}
 
 ---
 
-Based on the context, answer the follwing question:{query}
+Based on this context, answer the follwing question: {query}
 """
 
-
-#python3 pipeline/3_make_queries.py "Is Hillary Clinton the Candidate?"
 #conda activate base
 #conda activate myenv
+
+#python3 pipeline/_3_make_queries.py "Does Judith McHale believe that we should sent aid to Pakistan?  Why or why not?"
 
 
 def main():
 
     query = queryParser()
 
-    embedding_function = OllamaEmbeddings()
+    embedding_function = OllamaEmbeddings(model=MODEL)
 
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
     results = db.similarity_search_with_relevance_scores(query, k=NUM_RESULTS)
 
-    if len(results) ==0 or results[0][1] < 0.7 :
+    if len(results) ==0 or results[0][1] < 0.2 :
+        print(f"No valid results found or relevance score too low: {results[0][1]:.3f}")
         return
 
     promptBuilder(results, query)
-
-
 
 def promptBuilder(results, query):
     
     context = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context, question = query)
-    # print(prompt)
+    prompt = prompt_template.format(context=context, query = query)
+    print(prompt)
 
-    model = OllamaLLM(model="llama3.2")
+    model = OllamaLLM(model=MODEL)
     response_text = model.predict(prompt)
 
     sources = [doc.metadata.get("source", None) for doc, _score in results]
-    # formatted_response = f"Response: {response_text}\nSources: {sources}"
-    formatted_response = f"Response: {response_text}"
+    formatted_response = f"Response: {response_text}\nSources: {sources}"
+    # formatted_response = f"Response: {response_text}"
     print(formatted_response)
-
 
 def queryParser():
 
