@@ -5,29 +5,38 @@ import requests
 from bs4 import BeautifulSoup
 
 HEADERS={'User-Agent': 'Mozilla/5.0'}
+
+INPUT_JSON_PATH = 'json/clinton_emails/1000_clinton_emails_links.json'
+OUTPUT_DIRECTORY = 'email_repo'
+EMAIL_NAMING = 'clinton_email_content.md'
+
+ITERATION = 2
+CURRENT_ITERATION = f'json/clinton_emails/clinton_json_links_{ITERATION}.json'
+
 FIRST_BEGIN_DELIMITER = "h2"
 END_DELIMITER = "###"
 final_email_content=''
-INPUT_JSON_PATH = 'json/clinton_emails/1000_clinton_emails_links.json'
 
-CURRENT_INTERATION = 'json/clinton_emails/clinton_json_links_2.json'
-ITERATION = 2
+i = 0 #increment on each file in the repo
+TESTING_END_POINT = 5 #Set = a number < 100 for testing.  Else set = None
 
-i = 0
+POST_DOWNLOAD_BEGIN_DELIMITER = "\n*********************NEW_EMAIL*********************\n"
+POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"
+
 '''
 Main driver function
 '''
 def main():
 
-    import os
-    print("hello world at directory: " + os.getcwd())
 
-    with open(CURRENT_INTERATION, 'r') as json1: #import the file with the links to crawl
+    import os
+    print("At directory: " + os.getcwd())
+
+    with open(CURRENT_ITERATION, 'r') as json1: #import the file with the links to crawl
         json1 = json.load(json1)
 
     print("json loaded")
     
-
     html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json1['leaks']]) 
 
     soup = BeautifulSoup(html_format, 'html.parser')#the soup to parse
@@ -37,15 +46,18 @@ def main():
         # url = find_next_link #get the link
         url = find_next_link(str(line))
 
+        if TESTING_END_POINT is not None and i == TESTING_END_POINT: #This is used for small batches of emails in testing
+            break
+
         if url:
             current_soup = makeRequest(url) #make the https 
             fileParser(current_soup, url) #parse the current file and add it to the final archievd file
 
-    with open(f'clinton_email_content_{ITERATION}.html', 'w', encoding='utf-8') as file:
+    with open(f'{OUTPUT_DIRECTORY}/{ITERATION}_{EMAIL_NAMING}', 'w', encoding='utf-8') as file:
 
         file.write(final_email_content)
 
-    print("Email content downloaded and saved as email_content.html")
+print(f"Email content downloaded and saved as {ITERATION}_{EMAIL_NAMING}")
 
 '''
 This function hanldes the logic for making https requests
@@ -65,7 +77,6 @@ def makeRequest(current_url: str)-> str:
     response = requests.get(url=current_url, headers=HEADERS)
     print(response)
 
-
     if response.status_code != 200:
         raise ValueError(f"Request not made for: {current_url}")
     
@@ -80,10 +91,11 @@ parameters: line -inputted line
 '''
 def find_next_link(line: str)-> str:
 
-    print("about to find a link")
 
     if not line.startswith("<a href="):
         return None
+
+    print("about to find a link")
 
     soup = BeautifulSoup(line, 'html.parser') #use BS library to parse lines
     
@@ -110,6 +122,8 @@ def fileParser(soup: BeautifulSoup, url: str):
         
     content_lines = []
 
+    final_email_content += ''.join(POST_DOWNLOAD_BEGIN_DELIMITER) #Indicate beginning of new email
+
     while email_content:
         
         email_line = str(email_content)        
@@ -118,8 +132,10 @@ def fileParser(soup: BeautifulSoup, url: str):
 
         # final_email_content = ''.join(content_lines)
         final_email_content += ''.join(content_lines)
+
+    final_email_content += ''.join(POST_DOWNLOAD_END_DELIMITER) #Indicate end of new email
     
-    print("Email content downloaded and added to the archieve")
+    print("Email content downloaded and added to the current document")
 
 def json_splitter():
     print("json called")
@@ -130,7 +146,6 @@ def json_splitter():
 
     # Split the "leaks" array into chunks of 100 entries each
     chunks = [leaks[i:i + 100] for i in range(0, len(leaks), 100)]
-
     
     for index, chunk in enumerate(chunks): # Save each chunk to a new file
 
