@@ -5,6 +5,8 @@ from langchain_chroma import Chroma
 from langchain_ollama import OllamaEmbeddings
 from langchain_ollama import OllamaLLM
 
+from _1_WikiLeaksScraper import POST_DOWNLOAD_END_DELIMITER
+
 import shutil
 import os
 
@@ -19,12 +21,13 @@ CHROMA_PATH = "chroma"
 text_splitter = RecursiveCharacterTextSplitter( #Splitter splits an email into chunks by paragraphs
     chunk_size=500,
     separators= [
+        POST_DOWNLOAD_END_DELIMITER,
         "\n\n",
-        "\n"
+        "\n",
     ]
 )
 
-# python3 pipeline/_2_db_builder.py
+#python3 pipeline/_2_db_builder.py
 
 embeddings = OllamaEmbeddings(model=MODEL,)
 

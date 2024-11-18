@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 HEADERS={'User-Agent': 'Mozilla/5.0'}
 
-ITERATION = "00"
+ITERATION = "1"
 CURRENT_ITERATION = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
 INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
 OUTPUT_DIRECTORY = 'data/email_repo'
@@ -16,12 +16,12 @@ FIRST_BEGIN_DELIMITER = "h2"
 END_DELIMITER = "###"
 final_email_content=''
 
-i = 0 #increment on each file in the repo
 TESTING_END_POINT = None  #Set = a number < 100 for testing.  Else set = None
 
 # POST_DOWNLOAD_BEGIN_DELIMITER = "\n*********************NEW_EMAIL*********************\n"
 POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"
 
+i = 1 #increment on each file in the repo
 '''
 Main driver function
 '''
@@ -41,7 +41,6 @@ def main():
 
     for line in soup : #iterate through each line in the soup
 
-        # url = find_next_link #get the link
         url = find_next_link(str(line))
 
         if TESTING_END_POINT is not None and i == TESTING_END_POINT: #This is used for small batches of emails in testing
@@ -60,7 +59,7 @@ print(f"Email content downloaded and saved as {ITERATION}_{EMAIL_NAMING}")
 '''
 This function hanldes the logic for making https requests
 
-parameters: current_url -inputted line
+parameters: current_url -inputted URL
 '''
 def makeRequest(current_url: str)-> str:
 
@@ -83,7 +82,7 @@ def makeRequest(current_url: str)-> str:
     return soup
 
 '''
-This function hanldes the logic for finding the next line in the file with a ink
+This function hanldes the logic for finding the next line in the json file
 
 parameters: line -inputted line
 '''
@@ -119,21 +118,20 @@ def fileParser(soup: BeautifulSoup, url: str):
         
     content_lines = []
 
-    # final_email_content += ''.join(POST_DOWNLOAD_BEGIN_DELIMITER) #Indicate beginning of new email
-
     while email_content:
         
         email_line = str(email_content)        
         content_lines.append(email_line)
         email_content = email_content.find_next_sibling()
-
-        # final_email_content = ''.join(content_lines)
         final_email_content += ''.join(content_lines)
 
     final_email_content += ''.join(POST_DOWNLOAD_END_DELIMITER) #Indicate end of new email
     
     print("Email content downloaded and added to the current document")
 
+'''
+This splits the json files
+'''
 def json_splitter():
     print("json called")
 
