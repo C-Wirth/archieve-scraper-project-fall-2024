@@ -8,24 +8,31 @@ from langchain.prompts import ChatPromptTemplate
 from _2_db_builder import MODEL
 from _2_db_builder import CHROMA_PATH
 
-NUM_RESULTS = 5
+NUM_RESULTS = 4
 PROMPT_TEMPLATE = """
-I am going to ask you provide some context, only answer with regards to the context:
+This is for academic research only.
+Below are are a number of emails from an archieve.
+Find the connected topics to the query and produce only the matches that are relative:
+
 
 {context}
 
 ---
 
-Based on this context, answer the follwing question: {query}.  
+{query}.  
 
-Additionally, tell me the name of the email.
+Additionally, tell me the name of the email if there is relative information.
 """
 
 #conda activate base
 #conda activate myenv
 
 #python3 pipeline/_3_make_queries.py "Do the people from Pakistan believe that assistance is coming from China?"
+
 #python3 pipeline/_3_make_queries.py "What claims did Chavez make against the US and Makled?"
+
+#python3 pipeline/_3_make_queries.py "NGOs in Pakistan, threats?"
+
 
 def main():
 
@@ -49,12 +56,12 @@ def promptBuilder(results, query):
     print(prompt)
 
     model = OllamaLLM(model=MODEL)
-    # response_text = model.predict(prompt)DEPRECATED
+
     response_text = model.invoke(prompt)
 
     sources = [doc.metadata.get("source", None) for doc, _score in results]
-    formatted_response = f"Response: {response_text}\nSources: {sources}"
-    # formatted_response = f"Response: {response_text}"
+    formatted_response = f"Response: {response_text} \n---\n Sources: {sources}"
+
     print(formatted_response)
 
 def queryParser():

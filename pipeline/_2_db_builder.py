@@ -21,9 +21,9 @@ CHROMA_PATH = "chroma"
 text_splitter = RecursiveCharacterTextSplitter( #Splitter splits an email into chunks by paragraphs
     chunk_size=500,
     separators= [
-        POST_DOWNLOAD_END_DELIMITER,
         "\n\n",
         "\n",
+        POST_DOWNLOAD_END_DELIMITER
     ]
 )
 
