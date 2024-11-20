@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 HEADERS={'User-Agent': 'Mozilla/5.0'}
 
-ITERATION = "1"
+ITERATION = "00"
 CURRENT_ITERATION = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
 INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
 OUTPUT_DIRECTORY = 'data/email_repo'
@@ -22,8 +22,10 @@ TESTING_END_POINT = None  #Set = a number < 100 for testing.  Else set = None
 POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"
 
 i = 1 #increment on each file in the repo
+
 '''
 Main driver function
+Update ITERATION to chose the appropiate links to be scraped.
 '''
 def main():
 
@@ -39,6 +41,16 @@ def main():
 
     soup = BeautifulSoup(html_format, 'html.parser')#the soup to parse
 
+    soup_iterator(soup)
+    
+    with open(f'{OUTPUT_DIRECTORY}/{ITERATION}_{EMAIL_NAMING}', 'w', encoding='utf-8') as file:
+        file.write(final_email_content)
+
+    print(f"Email content downloaded and saved as {ITERATION}_{EMAIL_NAMING}")
+
+
+def soup_iterator(soup: BeautifulSoup):
+
     for line in soup : #iterate through each line in the soup
 
         url = find_next_link(str(line))
@@ -47,14 +59,9 @@ def main():
             break
 
         if url:
-            current_soup = makeRequest(url) #make the https 
+            current_soup = makeRequest(url) #make the https request
             fileParser(current_soup, url) #parse the current file and add it to the final archievd file
 
-    with open(f'{OUTPUT_DIRECTORY}/{ITERATION}_{EMAIL_NAMING}', 'w', encoding='utf-8') as file:
-
-        file.write(final_email_content)
-
-print(f"Email content downloaded and saved as {ITERATION}_{EMAIL_NAMING}")
 
 '''
 This function hanldes the logic for making https requests
@@ -63,7 +70,7 @@ parameters: current_url -inputted URL
 '''
 def makeRequest(current_url: str)-> str:
 
-    time.sleep(random.uniform(1, 3))
+    time.sleep(random.uniform(1, 3)) #sleep between requests to not overwhelm the server\
     
     if not current_url:
         print("No url")

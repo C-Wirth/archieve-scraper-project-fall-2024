@@ -19,11 +19,11 @@ MODEL="llama3.2"
 CHROMA_PATH = "chroma"
 
 text_splitter = RecursiveCharacterTextSplitter( #Splitter splits an email into chunks by paragraphs
-    chunk_size=500,
+    chunk_size=1000,
     separators= [
-        "\n\n",
-        "\n",
         POST_DOWNLOAD_END_DELIMITER
+        # "\n",
+        # "\n\n",
     ]
 )
 
@@ -55,22 +55,31 @@ def chroma_builder(all_chunks: list[Document]):
         persist_directory=CHROMA_PATH
     )
     print("Database successfully created")
-    
+
+"""
+Split documents into chunks by POST_DOWNLOAD_END_DELIMITER.
+"""    
 def buildChunks(documents):
 
     chunks = []
     total_docs = len(documents)
 
-    for i, md_doc in enumerate(documents, start=1):
+    for i, doc in enumerate(documents, start=1):
+        # Split the document content by the delimiter
+        doc_parts = doc.page_content.split(POST_DOWNLOAD_END_DELIMITER)
         
-        doc_chunks = text_splitter.split_documents([md_doc])
+        # Create a new Document object for each chunk with the same metadata
+        doc_chunks = [
+            Document(page_content=chunk.strip(), metadata=doc.metadata)
+            for chunk in doc_parts if chunk.strip()  # Exclude empty chunks
+        ]
         chunks.extend(doc_chunks)
 
-        print(f"Document {i}/{total_docs} split into {len(doc_chunks)} chunks.") #a successful split has occured
+        print(f"Document {i}/{total_docs} split into {len(doc_chunks)} chunks.")  # Successful split log
 
-    print(f"Splitting Completed: {len(documents)} documents into {len(chunks)} chunks.") #all done
-
+    print(f"Splitting Completed: {total_docs} documents into {len(chunks)} chunks.")  # All done
     return chunks
+
 
 def load_documents(): #The document contains all content on a page and meta data
     

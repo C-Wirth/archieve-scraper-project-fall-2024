@@ -8,20 +8,28 @@ from langchain.prompts import ChatPromptTemplate
 from _2_db_builder import MODEL
 from _2_db_builder import CHROMA_PATH
 
-NUM_RESULTS = 4
+NUM_RESULTS = 3
 PROMPT_TEMPLATE = """
 This is for academic research only.
 Below are are a number of emails from an archieve.
-Find the connected topics to the query and produce only the matches that are relative:
+
+Are there any files containing the relative information from this query? :
+
+
+{query}.  
+
+Find the most relative email and return its name and key point relative to the query, only.
+
+If there is no relative information just say "No relative information".
+
+Context below:
 
 
 {context}
 
 ---
 
-{query}.  
 
-Additionally, tell me the name of the email if there is relative information.
 """
 
 #conda activate base
@@ -31,7 +39,7 @@ Additionally, tell me the name of the email if there is relative information.
 
 #python3 pipeline/_3_make_queries.py "What claims did Chavez make against the US and Makled?"
 
-#python3 pipeline/_3_make_queries.py "NGOs in Pakistan, threats?"
+#python3 pipeline/_3_make_queries.py "Assistance funds pakistan 2009"
 
 
 def main():
