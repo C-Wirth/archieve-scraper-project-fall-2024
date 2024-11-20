@@ -29,18 +29,17 @@ text_splitter = RecursiveCharacterTextSplitter( #Splitter splits an email into c
 
 #python3 pipeline/_2_db_builder.py
 
-embeddings = OllamaEmbeddings(model=MODEL,)
+embedding_function = OllamaEmbeddings(model=MODEL,)
 
 llm = OllamaLLM(model=MODEL)
 
 def main():
-    
-    email_repo = load_documents()
 
+    email_repo = load_documents()
     all_chunks = buildChunks(email_repo)
 
-    # print(all_chunks[1].page_content)
-    # print(all_chunks[1].metadata)
+    print(all_chunks[1].page_content)
+    print(all_chunks[1].metadata)
 
     chroma_builder(all_chunks)
 
@@ -51,34 +50,23 @@ def chroma_builder(all_chunks: list[Document]):
 
     db = Chroma.from_documents(
         all_chunks,
-        embeddings,
+        embedding_function,
         persist_directory=CHROMA_PATH
     )
     print("Database successfully created")
-
-"""
-Split documents into chunks by POST_DOWNLOAD_END_DELIMITER.
-"""    
+    #db.
 def buildChunks(documents):
 
     chunks = []
     total_docs = len(documents)
 
     for i, doc in enumerate(documents, start=1):
-        # Split the document content by the delimiter
-        doc_parts = doc.page_content.split(POST_DOWNLOAD_END_DELIMITER)
-        
-        # Create a new Document object for each chunk with the same metadata
-        doc_chunks = [
-            Document(page_content=chunk.strip(), metadata=doc.metadata)
-            for chunk in doc_parts if chunk.strip()  # Exclude empty chunks
-        ]
-        chunks.extend(doc_chunks)
+        chunks.append(Document(page_content=doc.page_content.strip(), metadata=doc.metadata)) #Adding each chunk to the chunks structure
+        print(f"Document {i}/{total_docs} added as a single chunk")  # Log each document
 
-        print(f"Document {i}/{total_docs} split into {len(doc_chunks)} chunks.")  # Successful split log
-
-    print(f"Splitting Completed: {total_docs} documents into {len(chunks)} chunks.")  # All done
+    print(f"Processing Completed: {total_docs} documents added as {len(chunks)} chunks\n") 
     return chunks
+
 
 
 def load_documents(): #The document contains all content on a page and meta data

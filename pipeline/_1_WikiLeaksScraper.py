@@ -4,166 +4,132 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-HEADERS={'User-Agent': 'Mozilla/5.0'}
+HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
-ITERATION = "00"
-CURRENT_ITERATION = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
-INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{ITERATION}.json'
+JSON_FILE_ITERATION = "00"  # What JSON file number inputted
+INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{JSON_FILE_ITERATION}.json'
 OUTPUT_DIRECTORY = 'data/email_repo'
 EMAIL_NAMING = 'clinton_email_content.md'
 
 FIRST_BEGIN_DELIMITER = "h2"
-END_DELIMITER = "###"
-final_email_content=''
-
-TESTING_END_POINT = None  #Set = a number < 100 for testing.  Else set = None
-
-# POST_DOWNLOAD_BEGIN_DELIMITER = "\n*********************NEW_EMAIL*********************\n"
 POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"
 
-i = 1 #increment on each file in the repo
+output_iteration = 0  # Tracking the file naming for emails
 
-'''
-Main driver function
-Update ITERATION to chose the appropiate links to be scraped.
-'''
+
 def main():
-
     import os
     print("At directory: " + os.getcwd())
 
-    with open(CURRENT_ITERATION, 'r') as json1: #import the file with the links to crawl
-        json1 = json.load(json1)
+    # Load the input JSON file containing the links
+    with open(INPUT_JSON_PATH, 'r') as json_file:
+        json_data = json.load(json_file)
 
-    print("json loaded")
-    
-    html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json1['leaks']]) 
+    print("JSON loaded")
 
-    soup = BeautifulSoup(html_format, 'html.parser')#the soup to parse
+    # Create an HTML format string for parsing with BeautifulSoup
+    html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json_data['leaks']])
+    soup = BeautifulSoup(html_format, 'html.parser')
 
-    soup_iterator(soup)
-    
-    with open(f'{OUTPUT_DIRECTORY}/{ITERATION}_{EMAIL_NAMING}', 'w', encoding='utf-8') as file:
-        file.write(final_email_content)
+    # Process all links and build the repo
+    repo_builder(soup)
 
-    print(f"Email content downloaded and saved as {ITERATION}_{EMAIL_NAMING}")
+"""
+Iterates over the parsed HTML and processes each link to retrieve and save the emails.
+"""
+def repo_builder(soup: BeautifulSoup):
 
+    global output_iteration
 
-def soup_iterator(soup: BeautifulSoup):
-
-    for line in soup : #iterate through each line in the soup
-
+    for line in soup:
+        # Find the next link
         url = find_next_link(str(line))
 
-        if TESTING_END_POINT is not None and i == TESTING_END_POINT: #This is used for small batches of emails in testing
-            break
-
         if url:
-            current_soup = makeRequest(url) #make the https request
-            fileParser(current_soup, url) #parse the current file and add it to the final archievd file
+            # Make an HTTP request to the link and parse the email
+            current_soup = make_request(url)
+            if current_soup:
+                email_content = file_parser(current_soup, url)
 
+                if email_content:
+                    save_email(email_content)
+                    output_iteration += 1
 
-'''
-This function hanldes the logic for making https requests
-
-parameters: current_url -inputted URL
-'''
-def makeRequest(current_url: str)-> str:
-
-    time.sleep(random.uniform(1, 3)) #sleep between requests to not overwhelm the server\
+"""
+Writes the parsed email content to a file.
+"""
+def save_email(email: str):
     
+    file_path = f'{OUTPUT_DIRECTORY}/{output_iteration}_{EMAIL_NAMING}'
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(email)
+
+    print(f"Email content downloaded and saved as {output_iteration}_{EMAIL_NAMING}\n")
+
+"""
+Makes an HTTP request to the provided URL and returns the parsed HTML content.
+"""
+def make_request(current_url: str) -> BeautifulSoup:
+
+    time.sleep(random.uniform(1, 3))  # Avoid overwhelming the server
+
     if not current_url:
-        print("No url")
-        return
-    global i
-    i+=1
-    print(f"About to make request {i}")
+        print("No URL provided")
+        return None
+
+    print(f"Making request for URL: {current_url}")
     response = requests.get(url=current_url, headers=HEADERS)
-    print(response)
 
     if response.status_code != 200:
-        raise ValueError(f"Request not made for: {current_url}")
-    
-    soup = BeautifulSoup(response.content, 'html.parser')
+        print(f"Failed to retrieve {current_url}")
+        return None
 
-    return soup
+    return BeautifulSoup(response.content, 'html.parser')
 
-'''
-This function hanldes the logic for finding the next line in the json file
-
-parameters: line -inputted line
-'''
-def find_next_link(line: str)-> str:
+"""
+Extracts the next hyperlink from the given line of HTML.
+"""
+def find_next_link(line: str) -> str:
 
     if not line.startswith("<a href="):
         return None
 
-    print("about to find a link")
+    soup = BeautifulSoup(line, 'html.parser')
+    a_tag = soup.find('a')
 
-    soup = BeautifulSoup(line, 'html.parser') #use BS library to parse lines
-    
-    a_tag = soup.find('a') #find starting point
-
-    if a_tag and a_tag.has_attr('href'): #verify we have a link
+    if a_tag and a_tag.has_attr('href'):
         return a_tag['href']
-    
+
     return None
 
-'''
-this function parses a file and adds to the repo
-'''
-def fileParser(soup: BeautifulSoup, url: str):
+"""
+Parses the email content from the provided HTML soup.
+"""
+def file_parser(soup: BeautifulSoup, url: str) -> str:
 
-    global final_email_content
-    
     beginning_text = soup.find(FIRST_BEGIN_DELIMITER)
 
     if not beginning_text:
-        raise ValueError(f"Beginning text not found at: {url}")
-    
-    email_content = beginning_text.find_next_sibling()
-        
+        print(f"Email content start delimiter not found in {url}")
+        return ''
+
+    # Initialize email content
+    final_email_content = ''
     content_lines = []
 
+    email_content = beginning_text.find_next_sibling()
+
     while email_content:
-        
-        email_line = str(email_content)        
+        # Convert the email content to string and add it to the lines
+        email_line = str(email_content)
         content_lines.append(email_line)
         email_content = email_content.find_next_sibling()
-        final_email_content += ''.join(content_lines)
 
-    final_email_content += ''.join(POST_DOWNLOAD_END_DELIMITER) #Indicate end of new email
-    
-    print("Email content downloaded and added to the current document")
+    final_email_content = ''.join(content_lines) + POST_DOWNLOAD_END_DELIMITER
 
-'''
-This splits the json files
-'''
-def json_splitter():
-    print("json called")
+    print(f"Email parsed successfully")
+    return final_email_content
 
-    with open(INPUT_JSON_PATH, 'r') as file:
-        data = json.load(file)
-    leaks = data['leaks']
-
-    # Split the "leaks" array into chunks of 100 entries each
-    chunks = [leaks[i:i + 100] for i in range(0, len(leaks), 100)]
-    
-    for index, chunk in enumerate(chunks): # Save each chunk to a new file
-
-        print(f'beginning{index} iteration')
-
-        cur_data = {
-            "country": data["country"],
-            "leakgroup": data["leakgroup"],
-            "leaks": chunk
-        }
-
-        with open(f'clinton_json_links_{index + 1}.json', 'w') as outfile:
-            json.dump(cur_data, outfile, indent=4)
-
-    print("Files created successfully!")
 
 if __name__ == "__main__":
-    # json_splitter() #split all 1000 files
-    main() 
+    main()

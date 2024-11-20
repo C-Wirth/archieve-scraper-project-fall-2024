@@ -37,7 +37,7 @@ Context below:
 
 #python3 pipeline/_3_make_queries.py "Do the people from Pakistan believe that assistance is coming from China?"
 
-#python3 pipeline/_3_make_queries.py "What claims did Chavez make against the US and Makled?"
+#python3 pipeline/_3_make_queries.py "claims Chavez against the US and Makled"
 
 #python3 pipeline/_3_make_queries.py "Assistance funds pakistan 2009"
 
