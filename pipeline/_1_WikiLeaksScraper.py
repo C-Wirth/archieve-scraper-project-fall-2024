@@ -49,16 +49,18 @@ def repo_builder(soup: BeautifulSoup):
             # Make an HTTP request to the link and parse the email
             current_soup = make_request(url)
             if current_soup:
-                email_content = file_parser(current_soup, url)
+                email_content = file_parser(current_soup, url, output_iteration)
 
                 if email_content:
-                    save_email(email_content)
+                    save_email(email_content, output_iteration)
                     output_iteration += 1
 
 """
 Writes the parsed email content to a file.
 """
-def save_email(email: str):
+def save_email(email: str,output_iteration: int):
+
+    email+=f"repo_number[{output_iteration}]"
     
     file_path = f'{OUTPUT_DIRECTORY}/{output_iteration}_{EMAIL_NAMING}'
     with open(file_path, 'w', encoding='utf-8') as file:
@@ -105,7 +107,7 @@ def find_next_link(line: str) -> str:
 """
 Parses the email content from the provided HTML soup.
 """
-def file_parser(soup: BeautifulSoup, url: str) -> str:
+def file_parser(soup: BeautifulSoup, url: str, output_iteration: int) -> str:
 
     beginning_text = soup.find(FIRST_BEGIN_DELIMITER)
 
@@ -125,7 +127,7 @@ def file_parser(soup: BeautifulSoup, url: str) -> str:
         content_lines.append(email_line)
         email_content = email_content.find_next_sibling()
 
-    final_email_content = ''.join(content_lines) + POST_DOWNLOAD_END_DELIMITER
+    final_email_content = "repo number["+ str(output_iteration) + "]\n" +''.join(content_lines) #+ POST_DOWNLOAD_END_DELIMITER
 
     print(f"Email parsed successfully")
     return final_email_content

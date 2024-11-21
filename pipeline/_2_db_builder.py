@@ -52,10 +52,6 @@ def main():
 
     email_repo = load_documents()
     all_chunks = buildChunks(email_repo)
-
-    print(all_chunks[1].page_content)
-    print(all_chunks[1].metadata)
-
     chroma_builder(all_chunks)
 
 def chroma_builder(documents: list[Document]):
@@ -70,12 +66,17 @@ def chroma_builder(documents: list[Document]):
     collection = client.create_collection("emails")
 
     for i, d in enumerate(documents):
+        
+        id = d.page_content.split("\n")[0]
+
         response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
         embedding = response["embedding"]
         collection.add(
-            ids=[str(i)],
+            # ids=[str(i)],
+            ids=id,
             embeddings=[embedding],
-            documents=[d.page_content]
+            documents=[d.page_content],
+            metadatas=[{"reference_number": id}],
         )
         print(f"Document {i} added")
 
