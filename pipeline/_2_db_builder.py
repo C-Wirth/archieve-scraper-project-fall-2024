@@ -1,21 +1,17 @@
-
-import httpx
-from langchain.document_loaders import DirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from typing import List
+import glob
 from langchain.schema import Document
-from langchain_chroma import Chroma
-from langchain_ollama import OllamaEmbeddings
-from langchain_ollama import OllamaLLM
-
-import chromadb.utils.embedding_functions as embedding_functions
-from _1_WikiLeaksScraper import POST_DOWNLOAD_END_DELIMITER
-
-import ollama
-
-import chromadb
-
 import shutil
 import os
+
+
+import chromadb.utils.embedding_functions as embedding_functions
+import chromadb
+
+# from langchain.embeddings import HuggingFaceEmbeddings
+# from langchain_huggingface import HuggingFaceEmbeddings
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -26,77 +22,80 @@ MODEL="llama3.2"
 CHROMA_PATH = "chroma"
 
 
+model_name = "sentence-transformers/all-mpnet-base-v2"
+model_kwargs = {'device': 'cpu'}
+encode_kwargs = {'normalize_embeddings': False}
 
-text_splitter = RecursiveCharacterTextSplitter( #Splitter splits an email into chunks by paragraphs
-    chunk_size=1000,
-    separators= [
-        POST_DOWNLOAD_END_DELIMITER
-        # "\n",
-        # "\n\n",
-    ]
+EMBEDDING_FUNCTION = HuggingFaceEmbeddings(
+    model_name=model_name,
+    model_kwargs=model_kwargs,
+    encode_kwargs=encode_kwargs,
+    show_progress = True,
 )
-
-#python3 pipeline/_2_db_builder.py
-
-# embedding_function = OllamaEmbeddings(model=MODEL,) 
-
-#Try new embedding function
-embedding_function = embedding_functions.OllamaEmbeddingFunction( 
-    url="http://localhost:11434/api/embeddings",
-    model_name="llama3.2",
-)
-
-llm = OllamaLLM(model=MODEL)
 
 def main():
 
-    email_repo = load_documents()
-    all_chunks = buildChunks(email_repo)
-    chroma_builder(all_chunks)
+    chunks = load_documents()
+    client = chroma_builder()
+    collection_builder(chunks, client)
 
-def chroma_builder(documents: list[Document]):
+
+'''
+This function adds all chunks to the database
+'''
+def collection_builder(chunks : list[Document], client: chromadb):
+
+    embedding_function = EMBEDDING_FUNCTION
+
+    embeddings = embedding_function.embed_documents([chunk.page_content for chunk in chunks])  
+    
+    collection = client.create_collection("emails")
+
+    for i, chunk in enumerate(chunks, start=0):
+
+        collection.add(
+            ids=[chunk.metadata["source"]],  # Ensure metadata source is used as id
+            embeddings=[embeddings[i]],
+            documents=[chunk.page_content],
+            )
+        print(f"Document {i} added")
+ 
+'''
+This function creates an empty db - will delete the last persited one
+'''
+def chroma_builder():
 
     if os.path.exists(CHROMA_PATH):
+        print("Previous db deprecated")
         shutil.rmtree(CHROMA_PATH)
-
-    client = chromadb.PersistentClient(path=CHROMA_PATH)
 
     print("Empty Database successfully created")
 
-    collection = client.create_collection("emails")
+    return chromadb.PersistentClient(path=CHROMA_PATH)
 
-    for i, d in enumerate(documents):
-        
-        id = d.page_content.split("\n")[0]
+'''
+This function handles reads all markdown files from the DATA_PATH
+A List of Documents is returned
+A Document is a datatype with w fields:
+                i 'content' field from the md file
+                ii 'metadata' with the file_path
 
-        response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
-        embedding = response["embedding"]
-        collection.add(
-            # ids=[str(i)],
-            ids=id,
-            embeddings=[embedding],
-            documents=[d.page_content],
-            metadatas=[{"reference_number": id}],
-        )
-        print(f"Document {i} added")
+Each document will represent 1 chunk, so chunking is not required
+'''
+def load_documents() -> List[Document]: #The document contains all content on a page and meta data
+
+    files = glob.glob(os.path.join(DATA_PATH, '*.md'))
+    documents = []
+
+    for i, file_path in enumerate(files, start=1):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            documents.append(Document(page_content=content, metadata={"source": file_path}))
+            print(f"Document {i} read from {file_path}")  # Log each document
 
 
-def buildChunks(documents):
-
-    chunks = []
-    total_docs = len(documents)
-
-    for i, doc in enumerate(documents, start=1):
-        chunks.append(Document(page_content=doc.page_content.strip(), metadata=doc.metadata)) #Adding each chunk to the chunks structure
-        print(f"Document {i}/{total_docs} added as a single chunk")  # Log each document
-
-    print(f"Processing Completed: {total_docs} documents added as {len(chunks)} chunks\n") 
-    return chunks
-
-def load_documents(): #The document contains all content on a page and meta data
+    print("\nAll files read and documents created")
     
-    loader = DirectoryLoader(DATA_PATH, glob="**/*.md")  # Load all markdown files in the directory
-    documents = loader.load()  # loads the files into a list of documents
     return documents
 
 if __name__ == "__main__":
