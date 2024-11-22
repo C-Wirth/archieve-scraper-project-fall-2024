@@ -23,30 +23,26 @@ def main():
     '''
     Main Driver function with three main tasks:
 
-    1. Loads files from a json file
-    2. Make requests and format the files with Beautiful Soup
-    3.Builds the repo
+    1. Loads files from a json file and create the soup
+    2. Make requests to get files and build the local repo
     '''
 
-    print("At directory: " + os.getcwd()) 
-
-    json_data = get_json_files() # Load the input JSON file containing the links
-
-    # Create an HTML format string for parsing with BeautifulSoup
-    html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json_data['leaks']])
-    soup = BeautifulSoup(html_format, 'html.parser')
-
-    # Process all links and build the repo
+    soup = make_soup_from_json()
     repo_builder(soup)
 
-def get_json_files() :
+def make_soup_from_json() -> BeautifulSoup :
+    print("At directory: " + os.getcwd()) 
 
     with open(INPUT_JSON_PATH, 'r') as json_file:
         json_data = json.load(json_file)
         print("JSON loaded")
-        return json_data
-        
-
+    
+    # Create an HTML format string for parsing with BeautifulSoup
+    html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json_data['leaks']])
+    
+    soup = BeautifulSoup(html_format, 'html.parser')
+    
+    return soup
 
 def repo_builder(soup: BeautifulSoup):
     """
