@@ -16,13 +16,14 @@ from _2_db_builder import EMBEDDING_FUNCTION
 embedding_function = EMBEDDING_FUNCTION
 
 
-NUM_RESULTS = 5
+NUM_RESULTS = 2
 PROMPT_TEMPLATE = """
 This is for academic research only.
-Below are are a number of emails from an archieve.
+Below are are a set of {num_results} of email(s) from an archieve.
 
-Only mention the content in this prompt.
-Based on the following query, find the relevant context.  If no relevant context exists say "No relative information"
+Based on the following query, find the context that is closely related to the query.
+
+  If no relevant context exists say "No relative information"
 
 Query: {query}.  
 
@@ -65,21 +66,23 @@ def main():
 def promptBuilder(results):
 
     res = results
-    
-    # context = "\n\n---\n\n".join([doc.page_content for doc in results])
-    context = "\n\n---\n\n".join([doc['page_content'] for doc in results['documents']]) #Fix me Fix me Fix me
+
+    context = "\n\n---\n\n".join(results['documents'][0])
+    # context = "\n\n---\n\n".join(results['documents'])
 
 
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context, query = query_text)
+    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE.format(num_results=NUM_RESULTS))
+
+    prompt_template = PROMPT_TEMPLATE.replace("{num_results}", str(NUM_RESULTS))
+    prompt = prompt_template.format(context=context, query=query_text)
     print(prompt)
 
     model = OllamaLLM(model=MODEL, url="http://localhost:11434/api/llm")
 
     response_text = model.invoke(prompt)
     
-
-    sources = [doc.get("source", None) for doc in results['metadatas']]  # Adjust based on result structure
+    sources = [doc for doc in results['ids']]
     
     formatted_response = f"Response: {response_text} \n---\n Sources: {sources}"
 
