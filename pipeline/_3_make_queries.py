@@ -1,78 +1,63 @@
 import argparse
 from typing import List
 
-from langchain_ollama import OllamaEmbeddings
-from langchain_chroma import Chroma
 from langchain_ollama import OllamaLLM
-from langchain.prompts import ChatPromptTemplate
-import chromadb.utils.embedding_functions as embedding_functions
-import ollama
 
-from chromadb import Collection, PersistentClient
+from chromadb import Collection, PersistentClient, QueryResult
 from _2_db_builder import MODEL
 from _2_db_builder import CHROMA_PATH
 from _2_db_builder import EMBEDDING_FUNCTION
 
+query_text ='' #global variable for easy access
 embedding_function = EMBEDDING_FUNCTION
-
-
 NUM_RESULTS = 2
+
 PROMPT_TEMPLATE = """
 This is for academic research only.
 Below are are a set of {num_results} of email(s) from an archieve.
-
-Based on the following query, find the context that is closely related to the query.
-
-  If no relevant context exists say "No relative information"
-
-Query: {query}.  
-
 
 Context: {context}
 
 ---
 
+Answer the following question: Is there relative context in the emails with respect to the following query?
+Make the the response very short.
+
+Query: {query}.  
+
 """
 
-query_text =''
-
-#python3 pipeline/_3_make_queries.py "Do the people from Pakistan believe that assistance is coming from China?"
-
 #python3 pipeline/_3_make_queries.py "claims Chavez against the US and Makled"
+#python3 pipeline/_3_make_queries.py "Scooby Doo and Mickie Mouse Presidential Bid in Japan in the year 2432"
+#python3 pipeline/_3_make_queries.py "bombing Mahabad Iran"
 
-#python3 pipeline/_3_make_queries.py "Makled arrest dea"
+#python3 pipeline/_3_make_queries.py "war on women Middle East"
 
-#python3 pipeline/_3_make_queries.py "angry militiamen Libya"
 
-#python3 pipeline/_3_make_queries.py "DJ Khalid maine state senate bid"
+'''
+Main Driver function with four main tasks:
 
-#python3 pipeline/_3_make_queries.py "Judith McHale China funding"
-
+1. Wake up the database
+2. Receive and embed the query
+3. Make the query to the database and receive the top results
+4. Build the prompt
+'''
 def main():
 
     client = PersistentClient(path=CHROMA_PATH) #Wake up db and verify the db has the collection of emails
     collection = client.get_collection("emails")
     print(f"Total documents in 'emails' collection: {collection.count()}")    
 
-    query = queryParser() #Parse the query
-
+    query = queryParser() 
     results = queryMaker(query, collection) #make the query against the db
-
     promptBuilder(results)
 
 '''
-
+This functiom builds the prompt from the top documents from the database
 '''
 def promptBuilder(results):
 
-    res = results
-
     context = "\n\n---\n\n".join(results['documents'][0])
-    # context = "\n\n---\n\n".join(results['documents'])
-
-
-    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE.format(num_results=NUM_RESULTS))
 
     prompt_template = PROMPT_TEMPLATE.replace("{num_results}", str(NUM_RESULTS))
     prompt = prompt_template.format(context=context, query=query_text)
@@ -89,9 +74,11 @@ def promptBuilder(results):
     print(formatted_response)
 
 '''
-This function handles making the query to the db with the already embedded query
+This function handles making the query to the db with the embedded query
+
+It then returns the top results from the database
 '''
-def queryMaker(embedded_query : List[float], collection : Collection):
+def queryMaker(embedded_query : List[float], collection : Collection) -> QueryResult:
 
     results = collection.query(
         query_embeddings=embedded_query,
@@ -99,20 +86,20 @@ def queryMaker(embedded_query : List[float], collection : Collection):
     )
     return results
 
+'''
+Parse the query from args
+'''
 def queryParser():
 
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("query_text",type=str)
+    args = parser.parse_args()
+
     global query_text
-
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("query_text",type=str)
-    # args = parser.parse_args()
-    # query_text = args.query_text
-    # return query_text
-
-    query_text = "claims Chavez against the US and Makled"
+    query_text = args.query_text
 
     embedded_query = embedding_function.embed_query(query_text)
-
     return embedded_query
 
 if __name__ == "__main__":

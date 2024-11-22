@@ -3,6 +3,8 @@ import random
 import time
 import requests
 from bs4 import BeautifulSoup
+import os
+
 
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
@@ -18,14 +20,17 @@ output_iteration = 0  # Tracking the file naming for emails
 
 
 def main():
-    import os
-    print("At directory: " + os.getcwd())
+    '''
+    Main Driver function with three main tasks:
 
-    # Load the input JSON file containing the links
-    with open(INPUT_JSON_PATH, 'r') as json_file:
-        json_data = json.load(json_file)
+    1. Loads files from a json file
+    2. Make requests and format the files with Beautiful Soup
+    3.Builds the repo
+    '''
 
-    print("JSON loaded")
+    print("At directory: " + os.getcwd()) 
+
+    json_data = get_json_files() # Load the input JSON file containing the links
 
     # Create an HTML format string for parsing with BeautifulSoup
     html_format = ''.join([f'<a href="{entry["link"]}">{entry["name"]}</a><br/>' for entry in json_data['leaks']])
@@ -34,10 +39,19 @@ def main():
     # Process all links and build the repo
     repo_builder(soup)
 
-"""
-Iterates over the parsed HTML and processes each link to retrieve and save the emails.
-"""
+def get_json_files() :
+
+    with open(INPUT_JSON_PATH, 'r') as json_file:
+        json_data = json.load(json_file)
+        print("JSON loaded")
+        return json_data
+        
+
+
 def repo_builder(soup: BeautifulSoup):
+    """
+    Iterates over the parsed HTML and processes each link to retrieve and save the emails.
+    """
 
     global output_iteration
 
@@ -55,21 +69,26 @@ def repo_builder(soup: BeautifulSoup):
                     save_email(email_content, output_iteration)
                     output_iteration += 1
 
-"""
-Writes the parsed email content to a file.
-"""
-def save_email(email: str):
-    
-    file_path = f'{OUTPUT_DIRECTORY}/{output_iteration}_{EMAIL_NAMING}'
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.write(email)
+def find_next_link(line: str) -> str:
+    """
+    Extracts the next hyperlink from the given line of HTML.
+    """
 
-    print(f"Email content downloaded and saved as {output_iteration}_{EMAIL_NAMING}\n")
+    if not line.startswith("<a href="):
+        return None
 
-"""
-Makes an HTTP request to the provided URL and returns the parsed HTML content.
-"""
+    soup = BeautifulSoup(line, 'html.parser')
+    a_tag = soup.find('a')
+
+    if a_tag and a_tag.has_attr('href'):
+        return a_tag['href']
+
+    return None
+
 def make_request(current_url: str) -> BeautifulSoup:
+    """
+    Makes an HTTP request to the provided URL and returns the parsed HTML content.
+    """
 
     time.sleep(random.uniform(1, 3))  # Avoid overwhelming the server
 
@@ -86,26 +105,10 @@ def make_request(current_url: str) -> BeautifulSoup:
 
     return BeautifulSoup(response.content, 'html.parser')
 
-"""
-Extracts the next hyperlink from the given line of HTML.
-"""
-def find_next_link(line: str) -> str:
-
-    if not line.startswith("<a href="):
-        return None
-
-    soup = BeautifulSoup(line, 'html.parser')
-    a_tag = soup.find('a')
-
-    if a_tag and a_tag.has_attr('href'):
-        return a_tag['href']
-
-    return None
-
-"""
-Parses the email content from the provided HTML soup.
-"""
 def file_parser(soup: BeautifulSoup, url: str) -> str:
+    """
+    Parses the email content from the provided HTML soup.
+    """
 
     beginning_text = soup.find(FIRST_BEGIN_DELIMITER)
 
@@ -130,6 +133,17 @@ def file_parser(soup: BeautifulSoup, url: str) -> str:
     print(f"Email parsed successfully")
     return final_email_content
 
+
+def save_email(email: str, output_iteration):
+    """
+    Writes the parsed email content to a file.
+    """
+    
+    file_path = f'{OUTPUT_DIRECTORY}/{output_iteration}_{EMAIL_NAMING}'
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(email)
+
+    print(f"Email content downloaded and saved as {output_iteration}_{EMAIL_NAMING}\n")
 
 if __name__ == "__main__":
     main()
