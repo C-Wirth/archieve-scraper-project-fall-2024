@@ -27,11 +27,16 @@ Query: {query}.
 
 """
 
-#python3 pipeline/_3_make_queries.py "claims Chavez against the US and Makled"
-#python3 pipeline/_3_make_queries.py "Scooby Doo and Mickie Mouse Presidential Bid in Japan in the year 2432"
-#python3 pipeline/_3_make_queries.py "bombing Mahabad Iran"
-
+#python3 pipeline/_3_make_queries.py "Scooby Doo and Mickie Mouse Presidential Bid"
+#python3 pipeline/_3_make_queries.py "State Department Gender Policies"
 #python3 pipeline/_3_make_queries.py "war on women Middle East"
+#python3 pipeline/_3_make_queries.py "Mackled Venezuela"
+
+#python3 pipeline/_3_make_queries.py "hostages algeria terrorist attack"
+
+
+#python3 pipeline/_2_db_builder
+
 
 
 '''

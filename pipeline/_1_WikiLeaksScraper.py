@@ -5,7 +5,6 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
-
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 JSON_FILE_ITERATION = "00"  # What JSON file number inputted
@@ -55,6 +54,9 @@ def repo_builder(soup: BeautifulSoup):
         # Find the next link
         url = find_next_link(str(line))
 
+        if output_iteration == 10: #small batches
+            return
+
         if url:
             # Make an HTTP request to the link and parse the email
             current_soup = make_request(url)
@@ -83,7 +85,7 @@ def find_next_link(line: str) -> str:
 
 def make_request(current_url: str) -> BeautifulSoup:
     """
-    Makes an HTTP request to the provided URL and returns the parsed HTML content.
+    Makes an HTTPS request to the provided URL and returns the parsed HTML content.
     """
 
     time.sleep(random.uniform(1, 3))  # Avoid overwhelming the server

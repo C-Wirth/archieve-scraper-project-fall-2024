@@ -4,7 +4,6 @@ from langchain.schema import Document
 import shutil
 import os
 import chromadb
-
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from dotenv import load_dotenv
