@@ -14,11 +14,11 @@ LLama 3.2 - https://python.langchain.com/docs/integrations/llms/ollama/
 ChromaDb - https://docs.trychroma.com/
 
 Beautiful Soup -https://pypi.org/project/beautifulsoup4/
-(**ONLY** needed if you want to scrape the archieve in document 1)
+(**ONLY** needed if you want to scrape the archieve as performed in _1_WikiLeaksScraper.py)
 
 How to run:
 
-This is a pipeline.  The first two files have been run and the database has been built.  You just need to install the libraies to make your queries through your CLI.  See program 3 below to run the program
+This is a pipeline.  The first two files have ALREADY BEEN run and the database has been built.  You just need to install the libraies to make your queries through your CLI.  See program 3 below to run the program
 
 
 What The pipeline does:
@@ -48,7 +48,3 @@ _3_make_queries.py
         
         example command :
         python3 pipeline/_3_make_queries.py "NGO pakistan"
-
-
-
-
