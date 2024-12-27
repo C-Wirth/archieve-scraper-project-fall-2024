@@ -8,9 +8,9 @@ import os
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 JSON_FILE_ITERATION = "00"  # What JSON file number inputted
-INPUT_JSON_PATH = f'data/json_files/clinton_emails/clinton_json_links_{JSON_FILE_ITERATION}.json'
+INPUT_JSON_PATH = f'data/json_files/acrhieves/son_links_{JSON_FILE_ITERATION}.json'
 OUTPUT_DIRECTORY = 'data/email_repo'
-EMAIL_NAMING = 'clinton_email_content.md'
+EMAIL_NAMING = 'acrhieve_content.md'
 
 FIRST_BEGIN_DELIMITER = "h2"
 POST_DOWNLOAD_END_DELIMITER = "\n*********************END_OF_EMAIL*********************\n"

@@ -1,5 +1,5 @@
 Author : Colby Wirth
-Last Update : 30 November 2024
+Last Update : 27 December 2024
 
 What you need to run the model:
 
@@ -14,7 +14,7 @@ LLama 3.2 - https://python.langchain.com/docs/integrations/llms/ollama/
 ChromaDb - https://docs.trychroma.com/
 
 Beautiful Soup -https://pypi.org/project/beautifulsoup4/
-(**ONLY** needed if you want to scrape the archieve as performed in _1_WikiLeaksScraper.py)
+(**ONLY** needed if you want to scrape the archieve as performed in _1_archieveScraper.py)
 
 How to run:
 
@@ -24,11 +24,11 @@ This is a pipeline.  The first two files have ALREADY BEEN run and the database 
 What The pipeline does:
 
 program 1:
-_1_WikiLeaksScraper.py:
+_1_ArchieveScraper.py:
 
     This file takes an inputted json file will a set of links to scrape for content.
     It will output a markdown file will all content from each scraped page.
-    For the content of this assignment - I used a very small subset of links from the 'Clinton Emails' Wikileaks archieve. 
+    For the content of this assignment - I used a very small subset of links from the one Wikileaks archieve. 
     The program is designed to parse those emails specifically.
 
 program 2:
